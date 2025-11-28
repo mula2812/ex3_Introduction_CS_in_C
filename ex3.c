@@ -22,10 +22,8 @@ int isColumnFull(char[][COLS], int, int);
 
 int isBoardFull(char[][COLS], int, int);
 
-int isInBounds(int, int, int, int);
-
 /* Return index of row where token will land, or -1 if column full */
-int getFreeRow(char[][COLS], int, int, int);
+int getFreeRow(char[][COLS], int, int);
 
 /* Place token in column (0-based). Return row index or -1 if illegal */
 int makeMove(char[][COLS], int, int, int, char);
@@ -40,9 +38,6 @@ int computerChoose(char[][COLS], int, int, char, char);
 
 void runConnectFour(char[][COLS], int, int, int, int);
 
-// place the choosen token in its free rows space at the choosen column
-void initBoard(char[][COLS], int, int);
-
 void printBoard(char[][COLS], int, int);
 
 // my functions
@@ -52,12 +47,11 @@ void printHumanPrompt(char, int, int);
 int humanValidationInput(int, char);
 int diagonalVictoryCheck(char[][COLS], int, int, int, int, char);
 int reverseDiagonalVictoryCheck(char[][COLS], int, int, int, char);
+int distanceFromMiddle(int, int);
+int checkStepsBeforeCanHappen(char[][COLS], int, int, int, char);
+int possibleComputerMove(char[][COLS], int, int);
 
 int getPlayerType(int);
-
-
-
-
 
 //Global vars
 int isGameOver=0;
@@ -69,15 +63,6 @@ int main() {
     int p1Type = getPlayerType(1);
     int p2Type = getPlayerType(2);
     runConnectFour(board, ROWS, COLS, p1Type, p2Type);
-    // Note computer side need to redefine!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-    // if (p1Type == COMPUTER || p2Type == COMPUTER) {    
-    //     scanf(" %d", &columnNumber);
-    //     printf("Enter column (1-%d):", columnNumber);
-    // }
-    // initBoard(board, ROWS, COLS);
-    
-    // printBoard(board, ROWS, COLS);
-    // runConnectFour(board, ROWS, COLS, p1Type, p2Type);
     return 0;
 }
 
@@ -95,18 +80,32 @@ void runConnectFour(char board[][COLS], int rows, int columns, int p1Type, int p
             playerTurn--;
         }
     }
-    // printf("Game Over\n"); and who won? or tie
 }
 
 void actPlayerTurn(char board[][COLS], int rows, int columns, int playerType, char playerToken, char opponentToken){
     int choosenColumn=-1;
     int isVictory=0;
-    if(playerType == HUMAN){
+
+    // human turn
+    if(playerType == HUMAN){ 
+        // check if board full
+        if(isBoardFull(board, columns, rows)){
+            printf("Board full and no winner. It's a tie!\n");
+            isGameOver=1;
+        }
+
+        // find human choosen column
         choosenColumn=humanChoose(board, columns, rows, playerToken);
-        makeMove(board, columns, rows, choosenColumn, playerToken);
-        printf("---------------\ncheck\n %c %d %d", opponentToken, rows, choosenColumn);
         
-        isVictory=checkVictory(board, columns, rows, playerToken);
+        // if valid column chosen, make the move
+        if(choosenColumn!=-1){
+            makeMove(board, columns, rows, choosenColumn, playerToken);
+            
+            // check if human won
+            isVictory=checkVictory(board, columns, rows, playerToken);
+        }
+        
+        // check if human won
         if(!isVictory){
             if(isBoardFull(board, columns, rows)){
                 printf("Board full and no winner. It's a tie!\n");
@@ -114,23 +113,42 @@ void actPlayerTurn(char board[][COLS], int rows, int columns, int playerType, ch
             }
         }
         else{
+            printf("Player %c (%c) wins!\n", (playerToken == TOKEN_P1 ? '1' : '2'), playerToken);
             isGameOver=1;
         }
     }
+    // computer turn
     else{
-        // complete computer turn here
-        // computerChoose(board, columns, rows, playerToken, opponentToken);
-        // makeMove(board, columns, rows, choosenColumn, playerToken);
-        // isVictory=checkVictory(board, columns, rows, playerToken);
-        // if(!isVictory){
-        //     if(isBoardFull(board, columns, rows)){
-        //         printf("Board full and no winner. It's a tie!\n");
-        //         isGameOver=1;
-        //     }
-        // }
-        // else{
-        //     isGameOver=1;
-        // }
+        // check if board full
+        if(isBoardFull(board, columns, rows)){
+            printf("Board full and no winner. It's a tie!\n");
+            isGameOver=1;
+        }
+
+        printf("Player %c (%c) turn.\n", (playerToken == TOKEN_P1 ? '1' : '2'), playerToken);
+
+        // find computer choosen column
+        choosenColumn=computerChoose(board, columns, rows, playerToken, opponentToken);
+        
+        printf("Computer chose column %d\n", choosenColumn + 1);
+
+        // if valid column chosen, make the move
+        if(choosenColumn!=-1){
+            makeMove(board, columns, rows, choosenColumn, playerToken);
+            isVictory=checkVictory(board, columns, rows, playerToken);
+        }
+
+        // check if computer won
+        if(!isVictory){
+            if(isBoardFull(board, columns, rows)){
+                printf("Board full and no winner. It's a tie!\n");
+                isGameOver=1;
+            }
+        }
+        else{
+            printf("Player %c (%c) wins!\n", (playerToken == TOKEN_P1 ? '1' : '2'), playerToken);
+            isGameOver=1;
+        }
     }
 }
 
@@ -165,7 +183,7 @@ int humanChoose(char board[][COLS], int columns, int rows, char playerToken){
         printf("You chose column %d\n", choosenColumn);
         return (choosenColumn-1);
     }
-    
+    return -1;
 }
 
 // validate if the human input is really a number
@@ -208,7 +226,7 @@ int isColumnFull(char board[][COLS], int rows, int choosenColumn){
 }
 
 int makeMove(char board[][COLS], int columns, int rows, int choosenColumn, char playerToken){
-    int choosenRow=getFreeRow(board, columns, rows, choosenColumn);
+    int choosenRow=getFreeRow(board, rows, choosenColumn);
     if(choosenRow!=-1){
         board[choosenRow][choosenColumn]=playerToken;
         printBoard(board, rows, columns);
@@ -217,7 +235,7 @@ int makeMove(char board[][COLS], int columns, int rows, int choosenColumn, char 
     return -1;
 }
 
-int getFreeRow(char board[][COLS], int columns, int rows, int choosenColumn){
+int getFreeRow(char board[][COLS], int rows, int choosenColumn){
     if(isColumnFull(board, rows, choosenColumn)){
         return -1;
     }
@@ -227,7 +245,6 @@ int getFreeRow(char board[][COLS], int columns, int rows, int choosenColumn){
         }
     }
     return -1;
-    printf("%d", columns);
 }
 
 int isBoardFull(char board[][COLS], int columns, int rows){
@@ -247,7 +264,7 @@ int checkVictory(char board[][COLS], int columns, int rows, char playerToken){
             if(board[r][c]==playerToken){
                 sameTokenCountInColumn++;
                 if(sameTokenCountInColumn==CONNECT_N){
-                    printf("Player %c wins vertically!\n", playerToken);
+                    // printf("Player %c wins vertically!\n", playerToken);
                     return 1;
                 }
             }
@@ -263,7 +280,7 @@ int checkVictory(char board[][COLS], int columns, int rows, char playerToken){
             if(board[r][c]==playerToken){
                 sameTokenCountInRow++;
                 if(sameTokenCountInRow==CONNECT_N){
-                    printf("Player %c wins horizontally!\n", playerToken);
+                    // printf("Player %c wins horizontally!\n", playerToken);
                     return 1;
                 }
             }
@@ -299,7 +316,7 @@ int diagonalVictoryCheck(char board[][COLS], int columns, int rows, int startCol
         if(board[r][c]==playerToken){
             sameTokenCountInDiagonal++;
             if(sameTokenCountInDiagonal==CONNECT_N){
-                printf("Player %c wins diagonally (left to right)!\n", playerToken);
+                // printf("Player %c wins diagonally (left to right)!\n", playerToken);
                 return 1;
             }
         }
@@ -318,7 +335,7 @@ int reverseDiagonalVictoryCheck(char board[][COLS], int rows,
         if(board[r][c]==playerToken){
             sameTokenCountInDiagonal++;
             if(sameTokenCountInDiagonal==CONNECT_N){
-                printf("Player %c wins diagonally (right to left)!\n", playerToken);
+                // printf("Player %c wins diagonally (right to left)!\n", playerToken);
                 return 1;
             }
         }
@@ -329,9 +346,225 @@ int reverseDiagonalVictoryCheck(char board[][COLS], int rows,
     return 0;
 }
 
-// int initBoard(char board[][COLS], int p1Type, int p2Type){
- 
-// }
+int computerChoose(char board[][COLS], int columns, int rows, char playerToken, char opponentToken){
+    int moveOption=-1;
+    for(int i=1; i<=CONNECT_N-2; i++){
+        // check if computer can create sequance of CONNECT_N-i in next move
+        moveOption=checkStepsBeforeCanHappen(board, columns, rows, i, playerToken);
+        if(moveOption!=-1){
+            return moveOption;
+        }
+        // then check if opponent can create sequance of CONNECT_N-i in next move, and block it
+        moveOption=checkStepsBeforeCanHappen(board, columns, rows, i, opponentToken);
+        if(moveOption!=-1){
+            return moveOption;
+        }
+    }
+
+    // else, choose possible move
+    moveOption=possibleComputerMove(board, columns, rows);
+    if(moveOption!=-1){
+        return moveOption;
+    }
+    return moveOption;
+}
+
+int checkStepsBeforeCanHappen(char board[][COLS], int columns, int rows, int stepAmountBefore, char token){
+
+    // initialize variables
+    int minDistanceToMiddle = columns + 1; // set to max possible distance +1(thus any distance will be smaller)
+    int bestPossiboleMoveColumn = -1;
+    int wantedTokenValue = CONNECT_N - stepAmountBefore;
+
+    // run through all columns
+    for(int c=0; c < columns; c++){
+        // initialize variables for each column
+        int isFoundPossibleMove = 0;
+        int rowIndexOption = -1;
+        
+        // if column is full continue to next column
+        rowIndexOption = getFreeRow(board, rows, c);
+        if(rowIndexOption == -1){
+            continue;
+        }
+        
+        // vertically check
+        int sameTokenCountInColumn = 0;
+        for(int r=rowIndexOption + 1; r < rows; r++){
+            // check how many same tokens are in column
+            if(board[r][c]==token){
+                sameTokenCountInColumn++;
+            }
+            else{
+                break;
+            }
+        }
+
+        // if enough same tokens found in column
+        if(sameTokenCountInColumn>=wantedTokenValue){
+            isFoundPossibleMove = 1;
+        }
+        
+        // horizontally check
+        if(!isFoundPossibleMove){
+            int sameTokenCountInRow=0;
+            
+            // check right side
+            for(int i=c + 1; i < columns; i++){
+                // check how many same tokens are in row
+                if(board[rowIndexOption][i]==token){
+                    sameTokenCountInRow++;
+                }
+                else{
+                    break;
+                }
+            }
+            
+            // check left side
+            for(int i = c-1; i >= 0; i--){
+                // check how many same tokens are in row
+                if(board[rowIndexOption][i]==token){
+                    sameTokenCountInRow++;
+                }
+                else{
+                    break;
+                }
+            }
+
+            // if enough same tokens found in row
+            if(sameTokenCountInRow>=wantedTokenValue){
+                // possiboleMoveColumn = c;
+                isFoundPossibleMove = 1;
+            }   
+        }
+        
+        // diagonal check
+        
+        int sameTokenCountInDiagonal=0;
+        
+        // check right down and left up diagonal
+        if(!isFoundPossibleMove){    
+            
+            /* check right down diagonal
+            do row +1 and col +1 because we check from the free row position */
+            for (int i = rowIndexOption + 1, j = c + 1; i < rows && j < columns; i++, j++) {
+                
+                // check how many same tokens are in diagonal
+                if (board[i][j] == token){
+                    sameTokenCountInDiagonal++;       
+                } 
+                else{
+                    break;
+                }
+            }
+
+            /* check left up diagonal
+            do row -1 and col -1 because we check from the free row position*/
+            for (int i = rowIndexOption - 1, j = c - 1; i >=0 && j >=0; i--, j--) {
+                
+                // check how many same tokens are in diagonal
+                if (board[i][j] == token){
+                    sameTokenCountInDiagonal++;
+                }
+                else{
+                    break;
+                }   
+            }
+
+            // if enough same tokens found in diagonal
+            if(sameTokenCountInDiagonal>=wantedTokenValue){
+                isFoundPossibleMove = 1;
+            }
+        }
+        
+        // reverse diagonal check
+        if(!isFoundPossibleMove){    
+            int sameTokenCountInDiagonal=0;
+
+            /* check left down diagonal
+            do row +1 and col -1 because we check from the free row position */
+            for (int i = rowIndexOption + 1, j = c - 1; i < rows && j >=0; i++, j--) {
+                
+                // check how many same tokens are in diagonal
+                if (board[i][j] == token){
+                    sameTokenCountInDiagonal++;
+                } 
+                else{
+                    break;
+                }
+            }
+
+            /* check right up diagonal 
+            do row -1 and col +1 because we check from the free row position*/
+            for (int i = rowIndexOption - 1, j = c + 1; i >=0 && j < columns; i--, j++) {
+                
+                // check how many same tokens are in diagonal
+                if (board[i][j] == token){
+                    sameTokenCountInDiagonal++;
+                } 
+                else{
+                    break;
+                }
+            }
+
+            // if enough same tokens found in diagonal
+            if(sameTokenCountInDiagonal>=wantedTokenValue){
+                isFoundPossibleMove = 1;
+            }
+        }
+        // if possible move found, check if it's the best one (closest to middle)
+        if(isFoundPossibleMove){
+            int currentDistanceToMiddle=distanceFromMiddle(columns, c);
+            // if first possible move found, set it as best
+            if(bestPossiboleMoveColumn==-1 || currentDistanceToMiddle<minDistanceToMiddle){
+                bestPossiboleMoveColumn=c;
+                minDistanceToMiddle=currentDistanceToMiddle;
+            }
+        }
+
+    }
+    return bestPossiboleMoveColumn;
+}
+
+// calculate the distance of the possible move column from the middle column
+int distanceFromMiddle(int columns, int possiboleMoveColumn){
+    
+    /* for not dealing with even division in int ((columns-1)/2)
+    we multiplying by 2 the choosen column, using that we get the middle of the columns like it the end
+    because of that if we do (3*2)-6 we get that the destance from the middle is 0
+    and it keeping perfect symmetry for whole other numbers*/
+    int distance=2*possiboleMoveColumn-(columns - 1);
+
+    // if negative distance, get the absolute value
+    if(distance<0){
+        distance= -distance;
+    }
+    return distance;
+}
+
+// find possible move for computer when no immediate win or block needed
+int possibleComputerMove(char board[][COLS], int columns, int rows){
+    // initialize variables
+    int possibleMoveColumn=-1;
+    int minDistanceToMiddle=columns+1;
+    
+    // run through all columns to find possible move
+    for(int c=0; c<columns; c++){
+        if(isColumnFull(board, rows, c)){
+            continue;
+        }
+        
+        int currentDistanceToMiddle=distanceFromMiddle(columns, c);
+        // if closer to middle, update possible move
+        if(currentDistanceToMiddle<minDistanceToMiddle){
+            minDistanceToMiddle=currentDistanceToMiddle;
+            possibleMoveColumn=c;
+        }
+    }
+
+    return possibleMoveColumn;
+}
+
 void printBoard(char board[][COLS], int rows, int cols) {
     printf("\n");
     for (int r = 0; r < rows; r++) {
