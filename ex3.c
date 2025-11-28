@@ -50,6 +50,8 @@ void boardInitialize(char[][COLS], int, int);
 void actPlayerTurn(char[][COLS], int, int, int, char, char);
 void printHumanPrompt(char, int, int);
 int humanValidationInput(int, char);
+int diagonalVictoryCheck(char[][COLS], int, int, int, int, char);
+int reverseDiagonalVictoryCheck(char[][COLS], int, int, int, char);
 
 int getPlayerType(int);
 
@@ -98,20 +100,38 @@ void runConnectFour(char board[][COLS], int rows, int columns, int p1Type, int p
 
 void actPlayerTurn(char board[][COLS], int rows, int columns, int playerType, char playerToken, char opponentToken){
     int choosenColumn=-1;
-
+    int isVictory=0;
     if(playerType == HUMAN){
         choosenColumn=humanChoose(board, columns, rows, playerToken);
         makeMove(board, columns, rows, choosenColumn, playerToken);
         printf("---------------\ncheck\n %c %d %d", opponentToken, rows, choosenColumn);
-        isGameOver = isBoardFull(board, columns, rows);
-        checkVictory(board, columns, rows, playerToken);
+        
+        isVictory=checkVictory(board, columns, rows, playerToken);
+        if(!isVictory){
+            if(isBoardFull(board, columns, rows)){
+                printf("Board full and no winner. It's a tie!\n");
+                isGameOver=1;
+            }
+        }
+        else{
+            isGameOver=1;
+        }
     }
-    // else{
+    else{
+        // complete computer turn here
         // computerChoose(board, columns, rows, playerToken, opponentToken);
         // makeMove(board, columns, rows, choosenColumn, playerToken);
-        // isBoardFull(board, columns, rows);
-        // checkVictory(board, columns, rows, playerToken);
-    // }
+        // isVictory=checkVictory(board, columns, rows, playerToken);
+        // if(!isVictory){
+        //     if(isBoardFull(board, columns, rows)){
+        //         printf("Board full and no winner. It's a tie!\n");
+        //         isGameOver=1;
+        //     }
+        // }
+        // else{
+        //     isGameOver=1;
+        // }
+    }
 }
 
 int humanChoose(char board[][COLS], int columns, int rows, char playerToken){
@@ -220,59 +240,90 @@ int isBoardFull(char board[][COLS], int columns, int rows){
 }
 
 int checkVictory(char board[][COLS], int columns, int rows, char playerToken){
+    // vertically check
     for(int c=0; c<columns; c++){
         int sameTokenCountInColumn=0;
-        // vertically check
         for(int r=0; r<rows; r++){
-            if(r+1<rows){
-                if(board[r][c]==playerToken && board[r+1][c]==playerToken){
-                    sameTokenCountInColumn++;
-                    if(sameTokenCountInColumn==CONNECT_N){
-                        printf("Player %c wins vertically!\n", playerToken);
-                        return 1;
-                    }
-                }
-                else{
-                    sameTokenCountInColumn=0;
+            if(board[r][c]==playerToken){
+                sameTokenCountInColumn++;
+                if(sameTokenCountInColumn==CONNECT_N){
+                    printf("Player %c wins vertically!\n", playerToken);
+                    return 1;
                 }
             }
-        }    
-        // horizontally check
-        for(int r=0; r<rows; r++){
-            int sameTokenCountInRow=0;
-            for(int c=0; c<columns; c++){
-                if(c+1<columns){
-                    if(board[r][c]==playerToken && board[r][c+1]==playerToken){
-                        printf("hor check %c at %d %d\n", playerToken, r, c);
-                        sameTokenCountInRow++;
-                        if(sameTokenCountInRow==CONNECT_N){
-                            printf("Player %c wins horizontally!\n", playerToken);
-                            return 1;
-                        }
-                    }
-                    else{
-                        sameTokenCountInRow=0;
-                    }
-                }
+            else{
+                sameTokenCountInColumn=0;
             }
         }
-        // diagonal check (left to right)
-        for(int r=0; r<rows; r++){
-            int sameTokenCountInDiagonal=0;
-            for(int c=0; c<columns; c++){
-                if(r+1<rows && c+1<columns){
-                    if(board[r][c]==playerToken && board[r+1][c+1]==playerToken){
-                        sameTokenCountInDiagonal++;
-                        if(sameTokenCountInDiagonal==CONNECT_N){
-                            printf("Player %c wins diagonally (left to right)!\n", playerToken);
-                            return 1;
-                        }
-                    }
-                    else{
-                        sameTokenCountInDiagonal=0;
-                    }
+    }   
+    // horizontally check
+    for(int r=0; r<rows; r++){
+        int sameTokenCountInRow=0;
+        for(int c=0; c<columns; c++){
+            if(board[r][c]==playerToken){
+                sameTokenCountInRow++;
+                if(sameTokenCountInRow==CONNECT_N){
+                    printf("Player %c wins horizontally!\n", playerToken);
+                    return 1;
                 }
             }
+            else{
+                sameTokenCountInRow=0;
+            }
+        }
+    }
+
+    // diagonal check
+    for (int c = 0; c < columns; c++) {
+        if(diagonalVictoryCheck(board, columns, rows,c,0,playerToken)){
+            return 1;
+        }
+        if(reverseDiagonalVictoryCheck(board, rows,c,0,playerToken)){
+            return 1;
+        }
+    }
+    for (int r = 1; r < rows; r++) {
+        if(diagonalVictoryCheck(board, columns, rows,0,r,playerToken)){
+            return 1;
+        }
+        if(reverseDiagonalVictoryCheck(board, rows,columns-1,r,playerToken)){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int diagonalVictoryCheck(char board[][COLS], int columns, int rows, int startColumn, int startRow, char playerToken){
+    int sameTokenCountInDiagonal=0;
+    for(int r=startRow, c=startColumn; r<rows && c<columns; r++, c++){
+        if(board[r][c]==playerToken){
+            sameTokenCountInDiagonal++;
+            if(sameTokenCountInDiagonal==CONNECT_N){
+                printf("Player %c wins diagonally (left to right)!\n", playerToken);
+                return 1;
+            }
+        }
+        else{
+            sameTokenCountInDiagonal=0;
+        }
+    }
+    return 0;
+}
+
+int reverseDiagonalVictoryCheck(char board[][COLS], int rows, 
+    int startColumn, int startRow, char playerToken)
+{
+    int sameTokenCountInDiagonal=0;
+    for(int r=startRow, c=startColumn; r<rows && c>=0; r++, c--){
+        if(board[r][c]==playerToken){
+            sameTokenCountInDiagonal++;
+            if(sameTokenCountInDiagonal==CONNECT_N){
+                printf("Player %c wins diagonally (right to left)!\n", playerToken);
+                return 1;
+            }
+        }
+        else{
+            sameTokenCountInDiagonal=0;
         }
     }
     return 0;
