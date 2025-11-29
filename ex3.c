@@ -1,6 +1,7 @@
-/*
+/******************
 
-*/
+Assignment: 3
+*******************/
 #include <stdio.h>
 
 #ifndef ROWS
@@ -45,7 +46,7 @@ void printBoard(char[][COLS], int, int);
 
 void boardInitialize(char[][COLS], int, int);
 
-void actPlayerTurn(char[][COLS], int, int, int, char, char);
+int actPlayerTurn(char[][COLS], int, int, int, char, char);
 
 void printHumanPrompt(char, int, int);
 
@@ -100,7 +101,8 @@ void runConnectFour(char board[][COLS], int rows, int columns, int p1Type, int p
     }
 }
 
-int actPlayerTurn(char board[][COLS], int rows, int columns, int playerType, char playerToken, char opponentToken){
+int actPlayerTurn(char board[][COLS], int rows, int columns, 
+    int playerType, char playerToken, char opponentToken){
     int chosenColumn=-1;
     int isVictory=0;
 
@@ -172,7 +174,7 @@ int humanChoose(char board[][COLS], int columns, int rows, char playerToken){
     while(1){
         result = scanf(" %d", &chosenColumn);
         nextChar = getchar();
-        if (humanValidationInput(result, nextChar)!= 1){
+        if (!humanValidationInput(result, nextChar)){
             printHumanPrompt(playerToken, columns, 0);
             continue;
         }
@@ -189,8 +191,6 @@ int humanChoose(char board[][COLS], int columns, int rows, char playerToken){
             printHumanPrompt(playerToken, columns, 0);
             continue;
         }
-
-        printf("You chose column %d\n", chosenColumn);
         
         // return the chosen column (0-based)
         return (chosenColumn-1);
@@ -199,15 +199,20 @@ int humanChoose(char board[][COLS], int columns, int rows, char playerToken){
 }
 
 // validate if the human input is really a number
-int humanValidationInput(int chosenColumn, char nextChar){
-    int result=0;
-    if(nextChar == '\n'){
-        result=chosenColumn;
-    }
-    if (result!= 1 || nextChar != '\n'){
+int humanValidationInput(int scanfItems, char nextChar){
+    
+    int result = 1;
+    if (scanfItems!= 1 || nextChar != '\n'){
         printf("Invalid input. Enter a number.\n");
-        while (getchar() != '\n'); // clear input buffer
+        // clear input buffer and check if nextchar is valid - space or tab
+        while (nextChar != '\n'){
+            if(nextChar!= ' ' && nextChar!='\t'){
+                result = 0
+            }
+            nextChar = getchar();
+        }
     }
+    // success
     return result;
 }
 
@@ -217,14 +222,14 @@ void printHumanPrompt(char playerToken, int columns, int firstTryInTurn){
         if(firstTryInTurn){
             printf("Player 1 (%c) turn.\n", playerToken);
         }
-        printf("Enter column (1-%d):", columns);
+        printf("Enter column (1-%d): ", columns);
     }
     else{
         if(firstTryInTurn){
             printf("Player 2 (%c) turn.\n", playerToken);
         }
         
-        printf("Enter column (1-%d):", columns);
+        printf("Enter column (1-%d): ", columns);
     }
 }
 
@@ -328,7 +333,8 @@ int checkVictory(char board[][COLS], int columns, int rows, char playerToken){
 }
 
 // Check diagonal (\)
-int diagonalVictoryCheck(char board[][COLS], int columns, int rows, int startColumn, int startRow, char playerToken){
+int diagonalVictoryCheck(char board[][COLS], int columns, int rows, 
+    int startColumn, int startRow, char playerToken){
     int sameTokenCountInDiagonal=0;
     for(int r=startRow, c=startColumn; r<rows && c<columns; r++, c++){
         if(board[r][c]==playerToken){
@@ -391,7 +397,9 @@ size (CONNECT_N - stepAmountBefore) and returns the best column*/
 int checkStepsBeforeCanHappen(char board[][COLS], int columns, int rows, int stepAmountBefore, char token){
 
     // initialize variables
-    int minDistanceToMiddle = columns + 1; // set to max possible distance +1(thus any distance will be smaller)
+    
+    // set to max possible distance +1(thus any distance will be smaller)
+    int minDistanceToMiddle = columns + 1;
     int bestPossibleMoveColumn = -1;
     int wantedTokenValue = CONNECT_N - stepAmountBefore;
 
