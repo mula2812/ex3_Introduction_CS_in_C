@@ -1,5 +1,6 @@
 /******************
-
+Name: ilan mulakandov
+ID:325842847
 Assignment: 3
 *******************/
 #include <stdio.h>
@@ -207,7 +208,7 @@ int humanValidationInput(int scanfItems, char nextChar){
         // clear input buffer and check if nextchar is valid - space or tab
         while (nextChar != '\n'){
             if(nextChar!= ' ' && nextChar!='\t'){
-                result = 0
+                result = 0;
             }
             nextChar = getchar();
         }
