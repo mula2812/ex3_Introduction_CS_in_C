@@ -1,6 +1,4 @@
 /******************
-Name: ilan mulakandov
-ID:325842847
 Assignment: 3
 *******************/
 #include <stdio.h>
